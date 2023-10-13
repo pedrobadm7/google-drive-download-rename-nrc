@@ -1,41 +1,49 @@
 const fs = require('fs');
+const chokidar = require('chokidar');
 const PDFParser = require('pdf-parse');
 
 const downloadFolder = '/Users/pedrobadm7/Downloads';
 const outputFolder = '/Users/pedrobadm7/Downloads';
+const codigoProvaRegex = /CÓDIGODAPROVA:\s*([\w\d]+)\s*CÓDIGODAPROVAANTERIOR/;
 
-const findAndRenamePDF = async () => {
+const findAndRenamePDF = async (filePath) => {
   try {
-    const files = fs.readdirSync(downloadFolder);
-    
-    for (const file of files) {
-      if (file.startsWith('NRC_ ') && file.endsWith('.pdf')) {
-        const filePath = `${downloadFolder}/${file}`
-        
-        // Lê o conteúdo do arquivo PDF
-        const dataBuffer = fs.readFileSync(filePath);
-        const pdfData = await PDFParser(dataBuffer);
+    // Lê o conteúdo do arquivo PDF
+    const dataBuffer = fs.readFileSync(filePath);
+    const pdfData = await PDFParser(dataBuffer);
 
-        // Encontra o texto entre "CÓDIGO DA PROVA" e "CÓDIGO DA PROVA ANTERIOR"
-        const codigoProvaRegex = /CÓDIGODAPROVA:\s*([\w\d]+)\s*CÓDIGODAPROVAANTERIOR/;
-        const textoLimpo = pdfData.text.replace(/\n/g, '')
+    // Encontra o texto entre "CÓDIGO DA PROVA" e "CÓDIGO DA PROVA ANTERIOR"
+    const match = pdfData.text.match(codigoProvaRegex);
 
-        const match = textoLimpo.match(codigoProvaRegex);
-        if (match) {
-          const codigoProva = match[1].trim();
+    if (match) {
+      const codigoProva = match[1].trim();
 
-         const newFileName = `${outputFolder}/${codigoProva}.pdf`;
-         fs.renameSync(filePath, newFileName);
+      // Renomeia o arquivo PDF
+      const newFileName = `${outputFolder}/${codigoProva}.pdf`;
+      fs.renameSync(filePath, newFileName);
 
-         console.log(`Arquivo renomeado para: ${newFileName}`);
-        } else {
-          console.log('Texto não encontrado no arquivo PDF.');
-        }
-      }
+      console.log(`Arquivo renomeado para: ${newFileName}`);
+    } else {
+      console.log('Texto não encontrado no arquivo PDF.');
     }
-  } catch  (error) {
+  } catch (error) {
     console.error('Ocorreu um erro:', error);
   }
-}
+};
 
-findAndRenamePDF();
+const watcher = chokidar.watch(downloadFolder, {
+  ignored: /(^|[\/\\])\../, // Ignora arquivos ocultos
+  persistent: true,
+});
+
+watcher
+  .on('add', (path) => {
+    if (path.startsWith(`${downloadFolder}/NRC_`) && path.endsWith('.pdf')) {
+      findAndRenamePDF(path);
+    }
+  })
+  .on('error', (error) => {
+    console.error(`Erro na observação da pasta: ${error}`);
+  });
+
+console.log(`Observando a pasta ${downloadFolder} para arquivos "NRC_".`);
