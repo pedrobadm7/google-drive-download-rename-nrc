@@ -8,17 +8,14 @@ const codigoProvaRegex = /CÓDIGODAPROVA:\s*([\w\d]+)\s*CÓDIGODAPROVAANTERIOR/;
 
 const findAndRenamePDF = async (filePath) => {
   try {
-    // Lê o conteúdo do arquivo PDF
     const dataBuffer = fs.readFileSync(filePath);
     const pdfData = await PDFParser(dataBuffer);
 
-    // Encontra o texto entre "CÓDIGO DA PROVA" e "CÓDIGO DA PROVA ANTERIOR"
     const match = pdfData.text.match(codigoProvaRegex);
 
     if (match) {
       const codigoProva = match[1].trim();
 
-      // Renomeia o arquivo PDF
       const newFileName = `${outputFolder}/${codigoProva}.pdf`;
       fs.renameSync(filePath, newFileName);
 
