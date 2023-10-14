@@ -1,9 +1,12 @@
 const fs = require('fs');
 const chokidar = require('chokidar');
 const PDFParser = require('pdf-parse');
+os = require('os');
 
-const downloadFolder = '/Users/pedrobadm7/Downloads';
-const outputFolder = '/Users/pedrobadm7/Downloads';
+const username = os.userInfo().username;
+
+const downloadFolder = `/Users/${username}/Downloads`;
+const outputFolder = `/Users/${username}/Downloads`;
 const codigoProvaRegex = /CÓDIGODAPROVA:\s*([\w\d]+)\s*CÓDIGODAPROVAANTERIOR/;
 
 const findAndRenamePDF = async (filePath) => {
@@ -29,7 +32,7 @@ const findAndRenamePDF = async (filePath) => {
 };
 
 const watcher = chokidar.watch(downloadFolder, {
-  ignored: /(^|[\/\\])\../, // Ignora arquivos ocultos
+  ignored: /(^|[\/\\])\../,
   persistent: true,
 });
 
